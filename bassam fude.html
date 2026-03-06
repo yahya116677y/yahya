@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>بسام فيود - نسخة تحويل النقاط</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@700;900&display=swap');
+        
+        body { background-color: #000814; color: white; font-family: 'Cairo', sans-serif; margin: 0; padding-bottom: 100px; overflow-y: auto; }
+        
+        #setup-screen { position: fixed; width: 100%; height: 100%; background: #001d3d; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .setup-card { background: #003566; padding: 40px; border-radius: 20px; border: 4px solid #ffc300; text-align: center; }
+        input { padding: 15px; font-size: 20px; border-radius: 10px; border: none; margin: 10px; width: 300px; text-align: center; font-family: 'Cairo'; }
+        
+        /* لوحات النتائج */
+        .score-fixed { position: fixed; top: 10px; width: 210px; padding: 10px; border-radius: 15px; border: 3px solid #fff; z-index: 999; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.8); }
+        #score-right { right: 20px; background: #003566; border-color: #ffc300; }
+        #score-left { left: 20px; background: #600; border-color: #ffc300; }
+        .score-val { font-size: 45px; font-weight: 900; display: block; line-height: 1; margin-bottom: 5px; }
+        .team-label { font-size: 16px; color: #ffc300; font-weight: bold; display: block; margin-bottom: 5px; }
+
+        .wrong-container { display: flex; justify-content: center; gap: 5px; margin-bottom: 8px; }
+        .x-mark { width: 35px; height: 35px; background: #333; border: 2px solid #666; color: #666; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; border-radius: 5px; cursor: pointer; }
+        .x-mark.active { background: #d00000; border-color: #fff; color: #fff; box-shadow: 0 0 10px #ff0000; }
+
+        /* زر التحويل */
+        .transfer-btn { background: #ffc300; color: #000; border: none; padding: 5px 10px; font-size: 12px; font-weight: 900; border-radius: 5px; cursor: pointer; width: 100%; }
+        .transfer-btn:hover { background: #fff; }
+
+        .container { max-width: 850px; margin: 220px auto 20px auto; padding: 20px; }
+        .header { background: linear-gradient(#d00000, #9d0208); padding: 10px; margin-bottom: 20px; border-radius: 15px; border: 2px solid #ffc300; text-align: center; }
+        .header h1 { margin: 0; font-size: 35px; text-shadow: 2px 2px #000; color: #ffc300; }
+        
+        .question-box { background: #003566; padding: 25px; border-radius: 15px; font-size: 30px; font-weight: 900; margin-bottom: 30px; border: 3px solid #ffc300; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; }
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .answer-slot { perspective: 1000px; height: 110px; cursor: pointer; }
+        .card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s; transform-style: preserve-3d; }
+        .revealed .card-inner { transform: rotateY(180deg); }
+        
+        .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 2px solid #ffc300; }
+        .card-front { background: linear-gradient(#00509d, #002952); font-size: 35px; font-weight: 900; color: #ffc300; }
+        .card-back { background: #fdf0d5; color: #003049; transform: rotateY(180deg); font-size: 18px; font-weight: 900; flex-direction: column; justify-content: center; gap: 5px; }
+        
+        .point-btns { display: none; gap: 8px; margin-top: 5px; }
+        .revealed .point-btns { display: flex; }
+        .btn-add { font-size: 12px; padding: 4px 8px; border: none; border-radius: 5px; cursor: pointer; font-family: 'Cairo'; font-weight: bold; }
+        .btn-r { background: #003566; color: white; }
+        .btn-l { background: #600; color: white; }
+
+        .nav-controls { margin-top: 50px; display: flex; justify-content: center; gap: 15px; }
+        .nav-btn { background: #ffc300; color: #000; border: none; padding: 15px 45px; font-size: 20px; font-weight: 900; border-radius: 50px; cursor: pointer; box-shadow: 0 4px #b08d00; }
+    </style>
+</head>
+<body>
+
+<div id="setup-screen">
+    <div class="setup-card">
+        <h1 style="color: #ffc300; font-size: 45px; margin-bottom: 10px;">بسام فيود</h1>
+        <p>أدخل أسماء الفرق:</p>
+        <input type="text" id="t-right-in" placeholder="فريق اليمين">
+        <input type="text" id="t-left-in" placeholder="فريق اليسار">
+        <br><br>
+        <button class="nav-btn" onclick="startGame()">ابدأ اللعبة 🔥</button>
+    </div>
+</div>
+
+<div id="score-right" class="score-fixed">
+    <span class="team-label" id="label-right">فريق اليمين</span>
+    <span class="score-val" id="val-right">0</span>
+    <div class="wrong-container">
+        <div class="x-mark" onclick="toggleX(this)">X</div>
+        <div class="x-mark" onclick="toggleX(this)">X</div>
+        <div class="x-mark" onclick="toggleX(this)">X</div>
+    </div>
+    <button class="transfer-btn" onclick="transferPoints('R')">🔄 تحويل إلى اليسار</button>
+</div>
+
+<div id="score-left" class="score-fixed">
+    <span class="team-label" id="label-left">فريق اليسار</span>
+    <span class="score-val" id="val-left">0</span>
+    <div class="wrong-container">
+        <div class="x-mark" onclick="toggleX(this)">X</div>
+        <div class="x-mark" onclick="toggleX(this)">X</div>
+        <div class="x-mark" onclick="toggleX(this)">X</div>
+    </div>
+    <button class="transfer-btn" onclick="transferPoints('L')">🔄 تحويل إلى اليمين</button>
+</div>
+
+<div class="container">
+    <div class="header"><h1>بسام فيود</h1></div>
+    <div class="question-box" id="q-text">السؤال</div>
+    <div class="grid" id="ans-grid"></div>
+    <div class="nav-controls">
+        <button class="nav-btn" onclick="prevQ()">السابق</button>
+        <button class="nav-btn" onclick="nextQ()">التالي</button>
+    </div>
+</div>
+
+<script>
+    let scoreR = 0, scoreL = 0, currentIdx = 0, nameR = "", nameL = "";
+
+    // الأسئلة كما هي (يمكنك نسخ الـ 40 هنا من الكود السابق)
+    const questions = [
+        { q: "شيء دايم يضيع في البيت؟", a: [["ريموت التلفزيون", 40], ["مفاتيح السيارة", 25], ["الشاحن", 15], ["فردة الشراب", 10], ["نظارة", 5], ["الجوال", 5]] },
+        { q: "كلمة تقولها الأم إذا لقت الشيء الضايع؟", a: [["لو إنه ديدب عضك", 45], ["وش ذا اللي قدامك؟", 20], ["والله لو أقوم له", 15], ["ما تفتح عينك؟", 10], ["تحسبني شغالة؟", 5], ["ضاع ولقيته", 5]] },
+        { q: "شيء يسويه الواحد إذا علق الريموت؟", a: [["تصقعه في يدك", 40], ["تعض البطارية", 20], ["تضغط بقوة", 15], ["تقرب من الشاشة", 10], ["تنفخ فيه", 10], ["تغير مكانه", 5]] },
+        { q: "أكلة لازم تكون في كل عرس؟", a: [["مفطح / رز", 50], ["جريش / قرصان", 15], ["سلطة خضراء", 10], ["حلا قهوة", 10], ["صحن فاكهة", 10], ["مقبلات", 5]] }
+        // ... أضف البقية هنا
+    ];
+
+    function startGame() {
+        nameR = document.getElementById('t-right-in').value || "فريق اليمين";
+        nameL = document.getElementById('t-left-in').value || "فريق اليسار";
+        document.getElementById('label-right').innerText = nameR;
+        document.getElementById('label-left').innerText = nameL;
+        document.getElementById('setup-screen').style.display = 'none';
+        loadQ();
+    }
+
+    function loadQ() {
+        resetX();
+        const qData = questions[currentIdx];
+        document.getElementById('q-text').innerText = `س${currentIdx + 1}: ${qData.q}`;
+        const grid = document.getElementById('ans-grid');
+        grid.innerHTML = '';
+        
+        qData.a.forEach((item, i) => {
+            const slot = document.createElement('div');
+            slot.className = 'answer-slot';
+            slot.innerHTML = `
+                <div class="card-inner">
+                    <div class="card-front">${i + 1}</div>
+                    <div class="card-back">
+                        <div style="font-size:16px">${item[0]} <b style="color:#d00000">(${item[1]})</b></div>
+                        <div class="point-btns">
+                            <button class="btn-add btn-r" onclick="addPts('R', ${item[1]}, event)">+ ${nameR}</button>
+                            <button class="btn-add btn-l" onclick="addPts('L', ${item[1]}, event)">+ ${nameL}</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            slot.onclick = function() { this.classList.add('revealed'); };
+            grid.appendChild(slot);
+        });
+        window.scrollTo(0, 0);
+    }
+
+    // وظيفة تحويل النقاط
+    function transferPoints(fromSide) {
+        let amount = prompt("كم عدد النقاط التي تريد تحويلها؟");
+        amount = parseInt(amount);
+        
+        if (isNaN(amount) || amount <= 0) return;
+
+        if (fromSide === 'R') {
+            if (scoreR < amount) { alert("نقاط الفريق لا تكفي!"); return; }
+            scoreR -= amount;
+            scoreL += amount;
+        } else {
+            if (scoreL < amount) { alert("نقاط الفريق لا تكفي!"); return; }
+            scoreL -= amount;
+            scoreR += amount;
+        }
+        updateScoreboard();
+    }
+
+    function updateScoreboard() {
+        document.getElementById('val-right').innerText = scoreR;
+        document.getElementById('val-left').innerText = scoreL;
+    }
+
+    function toggleX(el) { el.classList.toggle('active'); }
+    function resetX() { document.querySelectorAll('.x-mark').forEach(el => el.classList.remove('active')); }
+
+    function addPts(side, pts, event) {
+        event.stopPropagation();
+        if (side === 'R') { scoreR += pts; } else { scoreL += pts; }
+        updateScoreboard();
+        event.target.parentElement.style.visibility = 'hidden';
+    }
+
+    function nextQ() { if (currentIdx < questions.length - 1) { currentIdx++; loadQ(); } }
+    function prevQ() { if (currentIdx > 0) { currentIdx--; loadQ(); } }
+</script>
+
+</body>
+</html>
